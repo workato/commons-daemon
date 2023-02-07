@@ -1,0 +1,13 @@
+name: Build Windows Service Wrapper
+
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build:
+    uses: ./.github/workflows/workflow-build.yml
+    secrets:
+      OPA_SIGNING_KEY_SSL_COM_P12_BASE64: 'abcd'
+      OPA_SIGNING_KEY_SSL_COM_PWD: 'dbca'
