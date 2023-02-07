@@ -1,0 +1,90 @@
+name: Build Windows Service Wrapper
+
+on:
+  workflow_call:
+    secrets:
+      OPA_SIGNING_KEY_SSL_COM_P12_BASE64:
+        description: 'OPA code signing certificate file (.pfx), base64-encoded.'
+        required: true
+      OPA_SIGNING_KEY_SSL_COM_PWD:
+        description: 'OPA code signing key passphrase.'
+        required: true
+
+jobs:
+  build:
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        arch:
+        - amd64
+        - amd64_x86
+        include:
+        - arch: amd64
+          cmsc: x64
+          cpu: X64
+        - arch: amd64_x86
+          cmsc: x86
+          cpu: X86
+
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v3.3.0
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1.12.1
+      with:
+          arch: ${{ matrix.arch }}
+    # JAVA_HOME variable must be set in env to build utils successfully.
+    # See https://github.com/workato/commons-daemon/blob/master/src/native/windows/README.txt
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3.9.0
+      with:
+        distribution: 'temurin'
+        java-version: 17
+    # Following setup is needed to product redistributable versions of binaries.
+    # See https://cwiki.apache.org/confluence/display/TOMCAT/Common+Native+Build+Environment
+    - name: Fetch CMSC
+      uses: dsaltares/fetch-gh-release-asset@1.1.0
+      with:
+        repo: mturk/cmsc
+        version: tags/v15.0.47
+        file: cmsc-15.0_47-win7-x86_x64.zip
+    - name: Set up CMSC
+      run: |
+        7z x cmsc-15.0_47-win7-x86_x64.zip
+    - name: Build Windows Service Wrapper (${{ matrix.arch }})
+      run: |
+        cmsc-15.0_47\setenv.bat ${{ matrix.cmsc }}
+        Push-Location 'src\native\windows\apps'
+        Push-Location 'prunmgr'
+        nmake -f Makefile CPU=${{ matrix.cpu }}
+        Pop-Location
+        Push-Location 'prunsrv'
+        nmake -f Makefile CPU=${{ matrix.cpu }}
+        Pop-Location
+        Pop-Location
+    - name: Sign binaries
+      if: ${{ inputs.github_environment == 'preview' || inputs.github_environment == 'production' }}
+      run: |
+        [io.file]::WriteAllBytes('workato-signing-cert.p12', [System.Convert]::FromBase64String('${{ secrets.OPA_SIGNING_KEY_SSL_COM_P12_BASE64 }}'))
+        & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign `
+          /debug `
+          /fd SHA256 `
+          /t http://timestamp.digicert.com `
+          /f workato-signing-cert.p12 `
+          /p "${{ secrets.OPA_SIGNING_KEY_SSL_COM_PWD }}" `
+          /d "Workato On-Premises Agent" `
+          src/native/windows/apps/prunmgr/WINXP_${{ matrix.cpu }}_GUI_RELEASE/prunmgr.exe
+        & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign `
+          /debug `
+          /fd SHA256 `
+          /t http://timestamp.digicert.com `
+          /f workato-signing-cert.p12 `
+          /p "${{ secrets.OPA_SIGNING_KEY_SSL_COM_PWD }}" `
+          /d "Workato On-Premises Agent" `
+          src/native/windows/apps/prunsrv/WINXP_${{ matrix.cpu }}_EXE_RELEASE/prunsrv.exe
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-service-wrapper-${{ matrix.cmsc }}
+        path: src\native\windows\apps\**\*.exe
+        if-no-files-found: error
