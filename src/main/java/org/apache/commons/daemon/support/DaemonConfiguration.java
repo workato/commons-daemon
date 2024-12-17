@@ -58,7 +58,6 @@ public final class DaemonConfiguration
     private   final static String BTOKEN                = "${";
     private   final static String ETOKEN                = "}";
 
-
     private final Properties configurationProperties;
     private final Properties systemProperties;
 
@@ -87,7 +86,7 @@ public final class DaemonConfiguration
         if (fileName == null) {
             fileName = DEFAULT_CONFIG;
         }
-        
+
         try (InputStream inputStream = new FileInputStream(fileName)) {
             configurationProperties.clear();
             configurationProperties.load(inputStream);
@@ -148,9 +147,7 @@ public final class DaemonConfiguration
      * Gets the configuration property.
      *
      * @param name The name of the property to get.
-     *
      * @throws ParseException if the property is wrongly formatted.
-     *
      * @return  Configuration property including any expansion/replacement
      */
     public String getProperty(final String name)
@@ -174,9 +171,7 @@ public final class DaemonConfiguration
      * daemon.arg[2] = argument 3
      * </pre>
      * @param name The name of the property array to get.
-     *
      * @throws ParseException if the property is wrongly formatted.
-     *
      * @return  Configuration property array including any expansion/replacement
      */
     public String[] getPropertyArray(final String name)

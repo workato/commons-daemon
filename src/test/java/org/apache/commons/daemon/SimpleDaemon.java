@@ -35,13 +35,13 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
     private boolean softReloadSignalled;
 
     public SimpleDaemon() {
-        System.err.println("SimpleDaemon: instance " + this.hashCode() + " created");
+        System.err.println("SimpleDaemon: instance " + hashCode() + " created");
         this.handlers = new Vector<>();
     }
 
     @Override
     protected void finalize() {
-        System.err.println("SimpleDaemon: instance " + this.hashCode() + " garbage collected");
+        System.err.println("SimpleDaemon: instance " + hashCode() + " garbage collected");
     }
 
     /**
@@ -49,7 +49,7 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
      */
     @Override
     public void init(final DaemonContext context) throws Exception {
-        System.err.println("SimpleDaemon: instance " + this.hashCode() + " init");
+        System.err.println("SimpleDaemon: instance " + hashCode() + " init");
 
         int port = 1200;
 
@@ -64,10 +64,10 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
             this.directory = "/tmp";
         }
 
-        /* Dump a message */
+        // Dump a message
         System.err.println("SimpleDaemon: loading on port " + port);
 
-        /* Set up this simple daemon */
+        // Set up this simple daemon
         this.controller = context.getController();
         this.server = new ServerSocket(port);
         this.thread = new Thread(this);
@@ -75,30 +75,30 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
 
     @Override
     public void start() {
-        /* Dump a message */
+        // Dump a message
         System.err.println("SimpleDaemon: starting");
 
-        /* Start */
+        // Start
         this.thread.start();
     }
 
     @Override
     public void stop() throws IOException, InterruptedException {
-        /* Dump a message */
+        // Dump a message
         System.err.println("SimpleDaemon: stopping");
 
-        /* Close the ServerSocket. This will make our thread to terminate */
+        // Close the ServerSocket. This will make our thread to terminate
         this.stopping = true;
         this.server.close();
 
-        /* Wait for the main thread to exit and dump a message */
+        // Wait for the main thread to exit and dump a message
         this.thread.join(5000);
         System.err.println("SimpleDaemon: stopped");
     }
 
     @Override
     public void destroy() {
-        System.err.println("SimpleDaemon: instance " + this.hashCode() + " destroy");
+        System.err.println("SimpleDaemon: instance " + hashCode() + " destroy");
     }
 
     @Override
@@ -118,15 +118,15 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
                 new Thread(handler).start();
             }
         } catch (final IOException e) {
-            /*
-             * Don't dump any error message if we are stopping. A IOException is generated when the ServerSocket is closed in stop()
-             */
+            //
+            // Don't dump any error message if we are stopping. A IOException is generated when the ServerSocket is closed in stop()
+            //
             if (!this.stopping) {
                 e.printStackTrace(System.err);
             }
         }
 
-        /* Terminate all handlers that at this point are still open */
+        // Terminate all handlers that at this point are still open
         final Enumeration<Handler> openhandlers = this.handlers.elements();
         while (openhandlers.hasMoreElements()) {
             final Handler handler = openhandlers.nextElement();
@@ -139,9 +139,9 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
 
     @Override
     public void signal() {
-        /*
-         * In this example we are using soft reload on custom signal.
-         */
+        //
+        // In this example we are using soft reload on custom signal.
+        //
         this.softReloadSignalled = true;
     }
 
@@ -282,9 +282,9 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
 
                     /* Disconnect */
                     case '3':
-                        final String name = this.getDirectoryName() + "/SimpleDaemon." + this.getConnectionNumber() + ".tmp";
+                        final String name = getDirectoryName() + "/SimpleDaemon." + getConnectionNumber() + ".tmp";
                         try {
-                            this.log(name);
+                            log(name);
                             out.println("File '" + name + "' created");
                         } catch (final IOException e) {
                             e.printStackTrace(out);
@@ -314,7 +314,7 @@ public class SimpleDaemon implements Daemon, Runnable, DaemonUserSignal {
 
                     /* If we get an IOException we return (disconnect) */
                 } catch (final IOException e) {
-                    System.err.println("SimpleDaemon: IOException in " + "connection " + this.getConnectionNumber());
+                    System.err.println("SimpleDaemon: IOException in " + "connection " + getConnectionNumber());
                     return;
                 }
             }

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -22,12 +22,12 @@
   <parent>
     <groupId>org.apache.commons</groupId>
     <artifactId>commons-parent</artifactId>
-    <version>58</version>
+    <version>78</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>commons-daemon</groupId>
   <artifactId>commons-daemon</artifactId>
-  <version>1.3.5-SNAPSHOT</version>
+  <version>1.4.1-SNAPSHOT</version>
   <name>Apache Commons Daemon</name>
   <!-- Daemon started in Commons in 2002 with an import of code from Tomcat,
        which is why the NOTICE file has an earlier date than the inceptionYear -->
@@ -122,22 +122,31 @@
 
   <properties>
     <!-- Apache Commons Daemon is used by Apache Tomcat. The oldest currently
-         supported Tomcat version is Tomcat 8 which has a minimum Java version
-         of Java 7. It is therefore advisable to check with the Apache Tomcat
+         supported Tomcat version is Tomcat 9 which has a minimum Java version
+         of Java 8. It is therefore advisable to check with the Apache Tomcat
          community before increasing these values. -->
-    <animal-sniffer.signature>java17</animal-sniffer.signature>
-    <commons.daemon.javaversion>1.7</commons.daemon.javaversion>
+    <animal-sniffer.signature>java18</animal-sniffer.signature>
+    <commons.daemon.javaversion>1.8</commons.daemon.javaversion>
     <maven.compiler.source>${commons.daemon.javaversion}</maven.compiler.source>
     <maven.compiler.target>${commons.daemon.javaversion}</maven.compiler.target>
     <commons.componentid>daemon</commons.componentid>
     <commons.module.name>org.apache.commons.daemon</commons.module.name>
-    <commons.release.version>1.3.5</commons.release.version>
+    <commons.release.version>1.4.1</commons.release.version>
     <commons.rc.version>RC1</commons.rc.version>
-    <commons.bc.version>1.3.4</commons.bc.version>
+    <commons.bc.version>1.4.0</commons.bc.version>
     <commons.jira.id>DAEMON</commons.jira.id>
     <commons.jira.pid>12310468</commons.jira.pid>
+    <project.build.outputTimestamp>2024-01-01T00:00:00Z</project.build.outputTimestamp>
+    <commons.jacoco.haltOnFailure>true</commons.jacoco.haltOnFailure>
+    <!-- JaCoCo: Don't make code coverage worse than: -->
+    <commons.jacoco.haltOnFailure>true</commons.jacoco.haltOnFailure>
+    <commons.jacoco.classRatio>0.12</commons.jacoco.classRatio>
+    <commons.jacoco.instructionRatio>0.00</commons.jacoco.instructionRatio>
+    <commons.jacoco.methodRatio>0.01</commons.jacoco.methodRatio>
+    <commons.jacoco.branchRatio>0.00</commons.jacoco.branchRatio>
+    <commons.jacoco.lineRatio>0.00</commons.jacoco.lineRatio>
+    <commons.jacoco.complexityRatio>0.00</commons.jacoco.complexityRatio>
   </properties>
-
   <profiles>
     <!-- Customise the default ASF Commons release profile -->
     <profile>

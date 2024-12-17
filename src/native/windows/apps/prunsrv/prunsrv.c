@@ -401,7 +401,7 @@ static void printVersion(void)
 {
     fwprintf(stderr, L"Apache Commons Daemon Service Runner version %S/Win%d (%S)\n",
             PRG_VERSION, PRG_BITS, __DATE__);
-    fwprintf(stderr, L"Copyright (c) 2000-2023 The Apache Software Foundation.\n\n"
+    fwprintf(stderr, L"Copyright (c) 2000-2024 The Apache Software Foundation.\n\n"
                      L"For bug reporting instructions, please see:\n"
                      L"<URL:https://issues.apache.org/jira/browse/DAEMON>.");
 }
@@ -1839,15 +1839,23 @@ void WINAPI serviceMain(DWORD argc, LPTSTR *argv)
 
         if (SO_STOPTIMEOUT) {
             /* we have a stop timeout */
-	    do {
+            BOOL bLoopWarningIssued = FALSE;
+            do {
                 /* wait 2 seconds */
-                apxHandleWait(gWorker, 2000, FALSE);
+                DWORD rv = apxHandleWait(gWorker, 2000, FALSE);
+                if (rv == WAIT_OBJECT_0 && !_exe_shutdown) {
+                    if (!bLoopWarningIssued) {
+                        apxLogWrite(APXLOG_MARK_WARN "Start method returned before stop method was called. This should not happen. Using loop with a fixed sleep of 2 seconds waiting for stop method to be called.");
+                        bLoopWarningIssued = TRUE;
+                    }
+                    Sleep(2000);
+                }
             } while (!_exe_shutdown);
             apxLogWrite(APXLOG_MARK_DEBUG "waiting %d sec... shutdown: %d", SO_STOPTIMEOUT, _exe_shutdown);
             apxHandleWait(gWorker, SO_STOPTIMEOUT*1000, FALSE);
-	} else {
-             apxHandleWait(gWorker, INFINITE, FALSE);
-	}
+        } else {
+            apxHandleWait(gWorker, INFINITE, FALSE);
+        }
         apxLogWrite(APXLOG_MARK_DEBUG "Worker finished.");
     }
     else {
@@ -1935,6 +1943,64 @@ BOOL docmdRunService(LPAPXCMDLINE lpCmdline)
     }
     return rv;
 }
+
+BOOL isRunningAsAdministrator(BOOL *bElevated) {
+    BOOL rv = FALSE;
+    HANDLE hToken;
+    TOKEN_ELEVATION tokenInformation;
+    DWORD dwSize;
+
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+        goto cleanup;
+    }
+
+    if (!GetTokenInformation(hToken, TokenElevation, &tokenInformation, sizeof(tokenInformation), &dwSize)) {
+        goto cleanup;
+    }
+
+    *bElevated = tokenInformation.TokenIsElevated;
+    rv = TRUE;
+
+cleanup:
+    if (hToken) {
+        CloseHandle(hToken);
+    }
+    return rv;
+}
+
+BOOL restartCurrentProcessWithElevation(DWORD *dwExitCode) {
+    BOOL rv = FALSE;
+    TCHAR szPath[MAX_PATH];
+    SHELLEXECUTEINFO shellExecuteInfo;
+
+    SetLastError(0);
+    GetModuleFileName(NULL, szPath, MAX_PATH);
+    if (GetLastError()) {
+        goto cleanup;
+    }
+
+    shellExecuteInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    shellExecuteInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+    shellExecuteInfo.hwnd = NULL;
+    shellExecuteInfo.lpVerb = L"runas";
+    shellExecuteInfo.lpFile = szPath;
+    shellExecuteInfo.lpParameters = PathGetArgs(GetCommandLine());
+    shellExecuteInfo.lpDirectory = NULL;
+    shellExecuteInfo.nShow = SW_SHOWNORMAL;
+    shellExecuteInfo.hInstApp = NULL;
+
+    if (!ShellExecuteEx(&shellExecuteInfo)) {
+        goto cleanup;
+    }
+    WaitForSingleObject(shellExecuteInfo.hProcess, INFINITE);
+    GetExitCodeProcess(shellExecuteInfo.hProcess, dwExitCode);
+
+    rv = TRUE;
+
+cleanup:
+    return rv;
+}
+
 
 static const char *gSzProc[] = {
     "",
@@ -2039,6 +2105,28 @@ void __cdecl main(int argc, char **argv)
                         t.wYear, t.wMonth, t.wDay,
                         t.wHour, t.wMinute, t.wSecond);
     }
+
+    if (lpCmdline->dwCmdIndex > 2 && lpCmdline->dwCmdIndex < 8) {
+        /* Command requires elevation */
+        BOOL bElevated;
+        if (!isRunningAsAdministrator(&bElevated)) {
+            apxDisplayError(FALSE, NULL, 0, "Unable to determine if process has administrator privileges. Continuing as if it has.\n");
+        } else {
+            if (!bElevated) {
+                DWORD dwExitCode;
+                if (!restartCurrentProcessWithElevation(&dwExitCode)) {
+                    apxDisplayError(FALSE, NULL, 0, "Failed to elevate current process.\n");
+                    rv = lpCmdline->dwCmdIndex + 2;
+                } else {
+                    if (dwExitCode) {
+                        apxDisplayError(FALSE, NULL, 0, "Running from a command prompt with administrative privileges may show further error details.\n");
+                    }
+                    rv = dwExitCode;
+                }
+                goto cleanup;
+            }
+        }
+    }
     switch (lpCmdline->dwCmdIndex) {
         case 1: /* Run Service as console application */
             if (!docmdDebugService(lpCmdline))
@@ -2048,23 +2136,23 @@ void __cdecl main(int argc, char **argv)
             if (!docmdRunService(lpCmdline))
                 rv = 4;
         break;
-        case 3: /* Start service */
+        case 3: /* Start service - requires elevation */
             if (!docmdStartService(lpCmdline))
                 rv = 5;
         break;
-        case 4: /* Stop Service */
+        case 4: /* Stop Service - requires elevation */
             if (!docmdStopService(lpCmdline))
                 rv = 6;
         break;
-        case 5: /* Update Service parameters */
+        case 5: /* Update Service parameters  - requires elevation */
             if (!docmdUpdateService(lpCmdline))
                 rv = 7;
         break;
-        case 6: /* Install Service */
+        case 6: /* Install Service - requires elevation */
             if (!docmdInstallService(lpCmdline))
                 rv = 8;
         break;
-        case 7: /* Delete Service */
+        case 7: /* Delete Service  - requires elevation */
             if (!docmdDeleteService(lpCmdline))
                 rv = 9;
         break;
@@ -2095,7 +2183,7 @@ cleanup:
                                       rv, gSzProc[ix]);
         if (ix > 2 && !_service_mode) {
             /* Print something to the user console */
-            apxDisplayError(FALSE, NULL, 0, "Failed to %s.", gSzProc[ix]);
+            apxDisplayError(FALSE, NULL, 0, "Failed to %s.\n", gSzProc[ix]);
         }
     }
     else
