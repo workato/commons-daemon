@@ -95,9 +95,9 @@ AP_FIND_JAVA_OS()
 if test -z "${JAVA_OS}"
 then
   AC_MSG_RESULT([jni_md.h found in $JAVA_HOME/$JAVA_INC])
-  INCLUDES="$INCLUDES -I$JAVA_HOME/include -I$JAVA_HOME/$JAVA_INC"
+  INCLUDES="$INCLUDES -I$JAVA_HOME/$JAVA_INC"
 else
-  INCLUDES="$INCLUDES -I$JAVA_HOME/include -I$JAVA_HOME/include/$supported_os"
+  INCLUDES="$INCLUDES -I$JAVA_HOME/$JAVA_INC -I$JAVA_HOME/$JAVA_INC/$JAVA_OS"
 fi
 
 dnl -------------------------------------------------------------------------
@@ -135,7 +135,8 @@ dnl -------------------------------------------------------------------------
 dnl Random programs we need to compile locally
 dnl -------------------------------------------------------------------------
 AP_MSG_HEADER([Writing output files])
-AC_OUTPUT(Makefile Makedefs native/Makefile)
+AC_CONFIG_FILES(Makefile Makedefs native/Makefile)
+AC_OUTPUT
 
 dnl -------------------------------------------------------------------------
 dnl Done

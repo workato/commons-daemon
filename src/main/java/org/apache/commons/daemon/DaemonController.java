@@ -17,7 +17,6 @@
 
 package org.apache.commons.daemon;
 
-
 /**
  * Defines methods needed by the DaemonLoader.
  */
@@ -55,7 +54,6 @@ public interface DaemonController
      * Shuts down daemon and logs failed message.
      *
      * @param   message The message to log
-     *
      * @throws IllegalStateException If the daemon is not in a valid state to be
      *                               shutdown
      */
@@ -66,7 +64,6 @@ public interface DaemonController
      * Shuts down daemon and logs failed message.
      *
      * @param   exception   The exception to log
-     *
      * @throws IllegalStateException If the daemon is not in a valid state to be
      *                               shutdown
      */
@@ -78,7 +75,6 @@ public interface DaemonController
      *
      * @param   message     The message to log
      * @param   exception   The exception to log
-     *
      * @throws IllegalStateException If the daemon is not in a valid state to be
      *                               shutdown
      */

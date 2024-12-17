@@ -183,8 +183,11 @@ AC_DEFUN(AP_SUPPORTED_HOST,[
     ;;
   riscv64)
     CFLAGS="$CFLAGS -DCPU=\\\"riscv64\\\""
-    supported_os="riscv64"
     HOST_CPU=riscv64
+    ;;
+  loongarch64)
+    CFLAGS="$CFLAGS -DCPU=\\\"loongarch64\\\""
+    HOST_CPU=loongarch64
     ;;
   *)
     AC_MSG_RESULT([failed])

@@ -156,13 +156,13 @@ apxServiceOpen(APXHANDLE hService, LPCWSTR szServiceName, DWORD dwOptions)
     if (!apxGetServiceDescriptionW(szServiceName,
                                    lpService->stServiceEntry.szServiceDescription,
                                    SIZ_DESLEN)) {
-        apxLogWrite(APXLOG_MARK_WARN "Failed to obtain service description for '%s'", szServiceName);
+        apxLogWrite(APXLOG_MARK_WARN "Failed to obtain service description for '%S'", szServiceName);
         lpService->stServiceEntry.szServiceDescription[0] = L'\0';
     }
     if (!apxGetServiceUserW(szServiceName,
                             lpService->stServiceEntry.szObjectName,
                             SIZ_RESLEN)) {
-        apxLogWrite(APXLOG_MARK_WARN "Failed to obtain service user name for '%s'", szServiceName);
+        apxLogWrite(APXLOG_MARK_WARN "Failed to obtain service user name for '%S'", szServiceName);
         lpService->stServiceEntry.szObjectName[0] = L'\0';
     }
     if (!QueryServiceConfigW(lpService->hService, NULL, 0, &dwNeeded)) {
@@ -304,14 +304,6 @@ apxServiceSetOptions(APXHANDLE hService,
     if (IS_INVALID_HANDLE(lpService->hService)) {
         apxLogWrite(APXLOG_MARK_WARN "Can't set options for service: Service is not open.");
         return FALSE;
-    }
-
-    /* Add the mandatory dependencies */
-    if (lpDependencies) {
-        lpDependencies = apxMultiSzCombine(NULL, lpDependencies,
-                                           L"Tcpip\0Afd\0", NULL);
-    } else {
-        lpDependencies = L"Tcpip\0Afd\0";
     }
 
     if (!ChangeServiceConfig(lpService->hService, dwServiceType,
@@ -477,7 +469,7 @@ apxServiceControl(APXHANDLE hService, DWORD dwControl, UINT uMsg,
         default:
             break;
     }
-    /* user defined controls */
+    /* user-defined controls */
     if (dwControl > 127 && dwControl < 224) {
         /* 128 ... 159  start signals
          * 160 ... 191  stop signals
@@ -694,11 +686,34 @@ apxServiceInstall(APXHANDLE hService, LPCWSTR szServiceName,
     lpService->stServiceEntry.lpConfig = NULL;
     AplZeroMemory(&lpService->stServiceEntry, sizeof(APXSERVENTRY));
 
-    if (lpDependencies)
-        lpDependencies = apxMultiSzCombine(NULL, lpDependencies,
-                                           L"Tcpip\0Afd\0", NULL);
-    else
+    if (lpDependencies) {
+        /* Only add Tcpip and Afd if not already present. */
+        BOOL needTcpip = TRUE;
+        BOOL needAfd = TRUE;
+        LPCWSTR p = lpDependencies;
+        while (*p && (needTcpip || needAfd)) {
+            if (lstrcmpiW(p, L"Tcpip") == 0) {
+                needTcpip = FALSE;
+            }
+            if (lstrcmpiW(p, L"Afd") == 0) {
+                needAfd = FALSE;
+            }
+            while (*p) {
+                p++;
+            }
+            p++;
+        }
+        if (needTcpip) {
+            lpDependencies = apxMultiSzCombine(NULL, lpDependencies,
+                                               L"Tcpip\0", NULL);
+        }
+        if (needAfd) {
+            lpDependencies = apxMultiSzCombine(NULL, lpDependencies,
+                                               L"Afd\0", NULL);
+        }
+    } else {
         lpDependencies = L"Tcpip\0Afd\0";
+    }
 
     if ((dwServiceType & SERVICE_INTERACTIVE_PROCESS) == SERVICE_INTERACTIVE_PROCESS) {
         // Caller is responsible for checking the user is set appropriately

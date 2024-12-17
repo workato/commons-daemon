@@ -42,12 +42,12 @@ public interface Daemon
      * <p>
      *   Under certain operating systems (typically Unix based operating
      *   systems) and if the native invocation framework is configured to do
-     *   so, this method might be called with <i>super-user</i> privileges.
+     *   so, this method might be called with <em>super-user</em> privileges.
      * </p>
      * <p>
      *   For example, it might be wise to create {@code ServerSocket}
      *   instances within the scope of this method, and perform all operations
-     *   requiring <i>super-user</i> privileges in the underlying operating
+     *   requiring <em>super-user</em> privileges in the underlying operating
      *   system.
      * </p>
      * <p>
@@ -100,7 +100,7 @@ public interface Daemon
      * Frees any resources allocated by this daemon such as file
      * descriptors or sockets. This method gets called by the container
      * after stop() has been called, before the JVM exits. The Daemon
-     * can not be restarted after this method has been called without a
+     * cannot be restarted after this method has been called without a
      * new call to the init() method.
      */
     void destroy();

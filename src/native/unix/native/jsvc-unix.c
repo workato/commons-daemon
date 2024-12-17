@@ -850,7 +850,7 @@ static int child(arg_data *args, home_data *data, uid_t uid, gid_t gid)
     /* Check wether we need to dump the VM version */
     if (args->vers == true) {
         log_error("jsvc (Apache Commons Daemon) " JSVC_VERSION_STRING);
-        log_error("Copyright (c) 1999-2022 Apache Software Foundation.");
+        log_error("Copyright (c) 1999-2024 Apache Software Foundation.");
         if (java_version() != true) {
             return -1;
         }
@@ -910,7 +910,7 @@ static int child(arg_data *args, home_data *data, uid_t uid, gid_t gid)
     sigaction(SIGUSR2, &act, NULL);
     sigaction(SIGTERM, &act, NULL);
     sigaction(SIGINT, &act, NULL);
-
+    controlled = getpid ();
     log_debug("Waiting for a signal to be delivered");
     create_tmp_file(args);
     while (!stopping) {
@@ -1308,7 +1308,7 @@ static int run_controller(arg_data *args, home_data *data, uid_t uid, gid_t gid)
      * These will be replaced in the child process.
      */
     memset(&act, '\0', sizeof(act));
-    act.sa_handler = controller;
+    act.sa_sigaction = controller;
     sigemptyset(&act.sa_mask);
     act.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
 
